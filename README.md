@@ -3,6 +3,15 @@
 一个给到店客人用的手机网页：**挑一句现成好评 → 一键复制 → 跳去抖音/点评/美团粘贴**。
 纯静态单文件，不用服务器、不用数据库，传上 GitHub Pages 就能扫码用。
 
+## ✅ 已经上线了
+
+**网址：** https://pengfer.github.io/liuyueli-review/
+
+二维码在 `二维码/六月里烘焙-好评小助手.png`，打印出来贴桌上即可。
+
+- 后台入口：连续点顶部 🎂 或店名 **3 下** → 密码 `8888`
+- 部署方式：GitHub Actions（`.github/workflows/deploy.yml`），每次 push 到 `main` 自动发布
+
 ---
 
 ## 一、5 分钟上线（GitHub Pages）
