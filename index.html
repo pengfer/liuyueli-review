@@ -168,6 +168,28 @@
   .sheet .close{margin-top:14px;width:100%;border:0;background:#f7eef1;color:var(--ink-soft);
     border-radius:13px;padding:12px;font-size:13px;font-weight:600}
 
+  /* 内置浏览器提示 */
+  .tipbar{
+    display:none;margin-top:12px;padding:11px 12px;border-radius:13px;
+    background:#fff4e5;border:1px solid #f6dfbc;color:#8a5a12;
+    font-size:11.5px;line-height:1.7;gap:8px;align-items:flex-start
+  }
+  .tipbar.on{display:flex}
+  .tipbar .t-ic{
+    flex:0 0 auto;width:16px;height:16px;border-radius:50%;background:#f0b44a;color:#fff;
+    font-size:11px;font-weight:800;display:grid;place-items:center;margin-top:1px
+  }
+  .tipbar b{color:#7a4a06}
+
+  .webrow{margin-top:14px}
+  .webrow p{font-size:11px;color:#bfaab0;margin:0 0 8px;text-align:center}
+  .webchips{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
+  .weblink{
+    font-size:11.5px;color:var(--rose-deep);text-decoration:none;
+    border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 12px;
+  }
+  .weblink:active{background:var(--pink-50)}
+
   /* 轻提示 */
   .toast{
     position:fixed;left:50%;bottom:42px;transform:translate(-50%,16px);z-index:99;
@@ -267,6 +289,21 @@
         <span class="ds">订单·评价</span>
       </a>
     </div>
+
+    <div class="tipbar" id="inappTip">
+      <span class="t-ic">!</span>
+      <span id="inappTipTxt">当前在 App 内置浏览器里，跳转会被拦截</span>
+    </div>
+
+    <div class="webrow">
+      <p>打不开 App？用网页版也能写评价：</p>
+      <div class="webchips">
+        <a class="weblink" data-web="douyin" target="_blank" rel="noopener" href="https://www.douyin.com/">抖音网页版</a>
+        <a class="weblink" data-web="dianping" target="_blank" rel="noopener" href="https://www.dianping.com/">大众点评网页版</a>
+        <a class="weblink" data-web="meituan" target="_blank" rel="noopener" href="https://www.meituan.com/">美团网页版</a>
+      </div>
+    </div>
+
     <button class="close" id="closeSheet">好，我去写评价</button>
   </div>
 </div>
@@ -596,7 +633,10 @@
   }
 
   /* ---------- 弹窗 & 跳转 ---------- */
-  function openSheet() { $("#mask").classList.add("show"); }
+  function openSheet() {
+    $("#mask").classList.add("show");
+    if (BLOCKED) showTipbar();
+  }
   function closeSheet() { $("#mask").classList.remove("show"); }
   $("#closeSheet").addEventListener("click", closeSheet);
   $("#mask").addEventListener("click", e => { if (e.target === $("#mask")) closeSheet(); });
@@ -616,23 +656,78 @@
       tip: "美团里进「我的订单」→ 找到这单 → 评价"
     }
   };
+
+  /* ---------- 环境判断：内置浏览器里，scheme 必被拦 ---------- */
+  const UA = (navigator.userAgent || "").toLowerCase();
+  const ENV = {
+    wechat: /micromessenger/.test(UA),
+    douyin: /aweme|bdyankui/.test(UA),
+    alipay: /alipayclient/.test(UA),
+    qq: /\sqq\//.test(UA),
+    weibo: /weibo/.test(UA),
+    ios: /iphone|ipad|ipod/.test(UA)
+  };
+  const BLOCKED = ENV.wechat || ENV.douyin || ENV.alipay || ENV.qq || ENV.weibo;
+
+  function blockedTip() {
+    if (ENV.wechat) return "在<b>微信</b>里打不开 App：点右上角 <b>···</b> → 「在浏览器打开」，再点一次就能跳了";
+    if (ENV.douyin) return "在<b>抖音</b>内置浏览器里跳不动：点右上角 <b>···</b> → 「在浏览器打开」，再来一次";
+    if (ENV.alipay) return "在<b>支付宝</b>里跳不动：点右上角 <b>···</b> → 「在浏览器打开」再试";
+    if (ENV.qq) return "在<b>QQ</b>里跳不动：点右上角 <b>···</b> → 「在浏览器打开」再试";
+    return "在 App 内置浏览器里跳转会被拦截，换系统浏览器打开就可以";
+  }
+
+  function showTipbar() {
+    const bar = $("#inappTip");
+    $("#inappTipTxt").innerHTML = blockedTip();
+    bar.classList.add("on");
+  }
+
+  /* ---------- 拉起 App：必须是「真实手势里的同步跳转」 ---------- */
+  let launching = false;
+  function launch(key) {
+    const cfg = APPS[key];
+    if (!cfg || launching) return;
+
+    // 内置浏览器：先提示，别白点（微信/抖音/支付宝/QQ 全部拦 scheme）
+    if (BLOCKED) { showTipbar(); return; }
+
+    launching = true;
+    let gone = false;
+    const markGone = () => { gone = true; };
+    document.addEventListener("visibilitychange", markGone);
+    window.addEventListener("pagehide", markGone);
+    window.addEventListener("blur", markGone);
+
+    // ⚠️ 关键：用 <a> 点击触发，且不能放进 setTimeout（会失去用户手势）
+    //    iframe 的方式在 iOS Safari / Android Chrome 已被禁用，这是之前跳不动的主因
+    try {
+      const a = document.createElement("a");
+      a.href = cfg.scheme;
+      a.style.cssText = "position:fixed;left:-9999px;top:0";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {}
+
+    setTimeout(() => {
+      document.removeEventListener("visibilitychange", markGone);
+      window.removeEventListener("pagehide", markGone);
+      window.removeEventListener("blur", markGone);
+      launching = false;
+      // 页面还在、也没失焦 → 判定没装 App
+      if (!gone && document.visibilityState === "visible") {
+        toast("没装 App 的话，用下面的「网页版」也能写");
+        const el = $(".webrow");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }, 1500);
+  }
+
   $$(".app").forEach(a => {
     a.addEventListener("click", e => {
       e.preventDefault();
-      const cfg = APPS[a.dataset.app];
-      if (!cfg) return;
-      const t0 = Date.now();
-      const ifr = document.createElement("iframe");
-      ifr.style.cssText = "display:none";
-      ifr.src = cfg.scheme;
-      document.body.appendChild(ifr);
-      setTimeout(() => {
-        document.body.removeChild(ifr);
-        // 如果页面还在这里（没被切走），说明没装 App → 给文字指引
-        if (document.visibilityState === "visible" && Date.now() - t0 > 900) {
-          toast(cfg.tip);
-        }
-      }, 900);
+      launch(a.dataset.app);
     });
   });
 
