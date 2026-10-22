@@ -239,9 +239,43 @@
     text-align:center;outline:none;letter-spacing:4px}
   .lock p{font-size:11.5px;color:var(--ink-soft);line-height:1.8}
   .hidden{display:none!important}
+
+  /* ---------- 微信 / QQ 顶部提示条 ---------- */
+  .wxbar{
+    position:fixed;left:0;right:0;top:0;z-index:70;
+    display:none;align-items:flex-start;gap:9px;
+    padding:12px 14px calc(12px);
+    background:linear-gradient(180deg,#fff8ec,#fff3e0);
+    border-bottom:1px solid #f5dfba;
+    box-shadow:0 6px 18px -12px rgba(140,90,20,.45);
+    transform:translateY(-110%);
+    transition:transform .3s cubic-bezier(.22,.9,.3,1);
+  }
+  .wxbar.on{display:flex;transform:translateY(0)}
+  .wxbar .arw{
+    flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+    background:#f0b44a;color:#fff;display:grid;place-items:center;font-size:15px;font-weight:800;
+  }
+  .wxbar .txt{flex:1;font-size:12px;line-height:1.65;color:#7a4a06}
+  .wxbar .txt b{color:#5c3402}
+  .wxbar .txt .hl{color:#c9556e;font-weight:700}
+  .wxbar .x{
+    flex:0 0 auto;border:0;background:transparent;color:#b08a4e;
+    font-size:16px;line-height:1;padding:2px 4px;
+  }
+  body.wx-open .page{padding-top:74px}
 </style>
 </head>
 <body>
+
+<!-- 微信/QQ 内提示条 -->
+<div class="wxbar" id="wxBar">
+  <span class="arw">↗</span>
+  <span class="txt" id="wxBarTxt">
+    微信里不让网页跳转 App。点右上角 <b>···</b> → <span class="hl">在浏览器打开</span>，就能一键跳抖音了
+  </span>
+  <button class="x" id="wxBarClose" aria-label="关闭">✕</button>
+</div>
 
 <div class="page">
   <div class="hero">
@@ -301,6 +335,9 @@
         <a class="weblink" data-web="douyin" target="_blank" rel="noopener" href="https://www.douyin.com/">抖音网页版</a>
         <a class="weblink" data-web="dianping" target="_blank" rel="noopener" href="https://www.dianping.com/">大众点评网页版</a>
         <a class="weblink" data-web="meituan" target="_blank" rel="noopener" href="https://www.meituan.com/">美团网页版</a>
+      </div>
+      <div class="webchips" style="margin-top:8px">
+        <button class="weblink" id="copyLink" type="button" style="font-family:inherit">📋 复制本页链接，去浏览器打开</button>
       </div>
     </div>
 
@@ -389,7 +426,7 @@
 {"id":"r01","cat":["全部","超赞","生日纪念"],"text":"和好朋友来做生日蛋糕，全程小姐姐都在旁边耐心指导，从抹奶油到摆装饰一步步带着做，手残党也完全没有翻车。成品比想象中好看太多，拍了好多照片，玩了一下午，性价比真的很高。"},
 {"id":"r02","cat":["全部","超赞","打卡出片"],"text":"店内装饰特别可爱，到处都是能拍照的小布置，随手拍都出片。做蛋糕的时候小姐姐一直在旁边指导，不会的地方会主动过来教，全程一点都不尴尬。做完成就感满满，很适合和闺蜜一起过来。"},
 {"id":"r03","cat":["全部","超赞","性价比"],"text":"团购的学生党价格很友好，不用等位，到店就能开始。店员全程在旁边搭把手，环境干净，第一次做蛋糕也不用紧张，做完感觉自己还挺有天赋的。"},
-{"id":"r04","cat":["全部","超赞","打卡出片"],"text":"店就在熊猫基地对面，做完蛋糕顺便去看了熊猫，安排得很顺。店里环境很好，工作人员一直很细心地引导我们，做蛋糕的窗户边还能看到对面的风景，整体体验超级棒，来成都玩的话很推荐。"},
+{"id":"r04","cat":["全部","超赞","打卡出片"],"text":"店在第一城B座，上来二十六楼，窗边正好能看到春熙路IFS那只爬墙熊猫，做完蛋糕顺便拍两张，安排得很顺。小姐姐全程都很细心，做的时候一直在旁边帮我们，来成都玩的话很推荐。"},
 {"id":"r05","cat":["全部","超赞","环境服务"],"text":"一进门就闻到很浓的奶香味，店里收拾得特别干净，装饰是小清新那种，待着很舒服。店员小姐姐说话很温柔，教得很细，奶油用的是动物奶油，吃起来一点都不腻，整体体验非常好。"},
 {"id":"r06","cat":["全部","超赞","情绪价值"],"text":"小姐姐人特别好，会一直夸，情绪价值直接拉满。第一次做蛋糕本来挺紧张的，结果全程被耐心带着做，做出来还挺像样。店里环境也很好，安静舒服，适合慢慢待一下午。"},
 {"id":"r07","cat":["全部","超赞","亲子"],"text":"周末带娃来的，店员会放慢节奏陪孩子一起挤奶油、摆水果，耐心得不行。店里干净，用具也收得整齐，孩子做完抱着盒子不肯撒手，下次还要来。"},
@@ -437,6 +474,9 @@
   const LS_KEY = "liuyueli_reviews_v1";
   const USED_KEY = "liuyueli_used_v1";
   const PIN_KEY = "liuyueli_pin_v1";
+  const VER_KEY = "liuyueli_seed_ver";
+  // 每次改 seed（文案库）就把这个数字 +1，老设备会自动换成新文案
+  const SEED_VER = 2;
 
   /* ---------- 状态 ---------- */
   let reviews = [];
@@ -447,14 +487,29 @@
 
   /* ---------- 存储 ---------- */
   function load() {
+    let storedVer = 0;
+    try { storedVer = parseInt(localStorage.getItem(VER_KEY) || "0", 10) || 0; } catch (e) {}
     try {
       const r = localStorage.getItem(LS_KEY);
       const u = localStorage.getItem(USED_KEY);
       if (r) reviews = JSON.parse(r);
       if (u) used = JSON.parse(u);
     } catch (e) {}
-    if (!reviews || !reviews.length) { reviews = SEED.slice(); saveReviews(); }
     if (!Array.isArray(used)) used = [];
+
+    // 文案库升级：seed 变了就替换官方文案，保留老板自己加的（id 以 u 开头）
+    if (storedVer !== SEED_VER) {
+      const mine = Array.isArray(reviews) ? reviews.filter(x => x && /^u/.test(x.id)) : [];
+      const oldText = {};
+      (Array.isArray(reviews) ? reviews : []).forEach(x => { oldText[x.id] = x.text; });
+      reviews = SEED.map(s => ({ id: s.id, cat: s.cat, text: s.text })).concat(mine);
+      // 已复制记录：seed 里仍存在的保留；改过文案的条目重新放出来
+      used = used.filter(id => reviews.some(x => x.id === id) && oldText[id] === (reviews.find(x => x.id === id) || {}).text);
+      try { localStorage.setItem(VER_KEY, String(SEED_VER)); } catch (e) {}
+      saveReviews();
+    }
+
+    if (!reviews || !reviews.length) { reviews = SEED.slice(); saveReviews(); }
     // 清理已不存在于库里的 used id
     used = used.filter(id => reviews.some(x => x.id === id));
     saveUsed();
@@ -670,12 +725,31 @@
   const BLOCKED = ENV.wechat || ENV.douyin || ENV.alipay || ENV.qq || ENV.weibo;
 
   function blockedTip() {
-    if (ENV.wechat) return "在<b>微信</b>里打不开 App：点右上角 <b>···</b> → 「在浏览器打开」，再点一次就能跳了";
-    if (ENV.douyin) return "在<b>抖音</b>内置浏览器里跳不动：点右上角 <b>···</b> → 「在浏览器打开」，再来一次";
-    if (ENV.alipay) return "在<b>支付宝</b>里跳不动：点右上角 <b>···</b> → 「在浏览器打开」再试";
-    if (ENV.qq) return "在<b>QQ</b>里跳不动：点右上角 <b>···</b> → 「在浏览器打开」再试";
+    if (ENV.wechat) return "微信会拦掉所有 App 跳转：点右上角 <b>···</b> → <b>在浏览器打开</b>，再点一次就能跳了。或者直接用下面的网页版。";
+    if (ENV.qq) return "QQ 内置浏览器会拦 App 跳转：点右上角 <b>···</b> → <b>在浏览器打开</b>，再试一次。";
+    if (ENV.douyin) return "抖音内置浏览器跳不动：点右上角 <b>···</b> → 「在浏览器打开」，再来一次";
+    if (ENV.alipay) return "支付宝内置浏览器跳不动：点右上角 <b>···</b> → 「在浏览器打开」再试";
     return "在 App 内置浏览器里跳转会被拦截，换系统浏览器打开就可以";
   }
+
+  /* ---------- 微信/QQ：顶部常驻提示（因为没法自动跳浏览器） ---------- */
+  (function initWxBar() {
+    if (!(ENV.wechat || ENV.qq)) return;
+    const bar = $("#wxBar");
+    if (!bar) return;
+    if (ENV.qq) {
+      $("#wxBarTxt").innerHTML = 'QQ 里不让网页跳转 App。点右上角 <b>···</b> → <span class="hl">在浏览器打开</span>，就能一键跳抖音了';
+    }
+    const closed = sessionStorage.getItem("wxbar_closed");
+    if (closed !== "1") {
+      setTimeout(() => { bar.classList.add("on"); document.body.classList.add("wx-open"); }, 600);
+    }
+    $("#wxBarClose").addEventListener("click", () => {
+      bar.classList.remove("on");
+      document.body.classList.remove("wx-open");
+      sessionStorage.setItem("wxbar_closed", "1");
+    });
+  })();
 
   function showTipbar() {
     const bar = $("#inappTip");
@@ -730,6 +804,16 @@
       launch(a.dataset.app);
     });
   });
+
+  /* 微信里最实用的一招：复制本页链接，让客人粘到浏览器 */
+  const cl = $("#copyLink");
+  if (cl) {
+    cl.addEventListener("click", () => {
+      copyText(location.href).then(ok => {
+        toast(ok ? "链接已复制，打开浏览器粘贴访问" : "复制失败，请长按地址栏手动复制");
+      });
+    });
+  }
 
   /* ---------- 隐藏后台：连点蛋糕 / 标题 3 次 ---------- */
   let taps = 0, tapTimer = null;
