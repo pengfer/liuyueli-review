@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#fdf3f5">
+<meta name="description" content="六月里烘焙 · DIY蛋糕｜好评小助手">
+<title>六月里烘焙 · 好评小助手</title>
+<style>
+  :root{
+    --cream:#fdf7f8;
+    --pink-50:#fff5f7;
+    --pink-100:#ffe9ef;
+    --pink-200:#ffd3dd;
+    --pink-300:#f9b4c4;
+    --rose:#e8758f;
+    --rose-deep:#c9556e;
+    --ink:#4a3b40;
+    --ink-soft:#8b747b;
+    --line:#f2dfe5;
+    --gold:#c9a86a;
+    --shadow:0 10px 30px -18px rgba(201,85,110,.45);
+    --r:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(520px 300px at 50% -6%, #ffe6ec 0%, rgba(255,255,255,0) 72%),
+      radial-gradient(420px 260px at 100% 12%, #fff0f4 0%, rgba(255,255,255,0) 75%),
+      var(--cream);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:520px;margin:0 auto;padding:0 16px 48px}
+
+  /* ---------- 头部 ---------- */
+  .hero{position:relative;padding:26px 4px 16px;text-align:center}
+  .hero .cake{
+    width:84px;height:84px;margin:0 auto 10px;border-radius:50%;
+    background:radial-gradient(circle at 34% 28%,#fff 0%,#ffe3ea 52%,#ffd0dc 100%);
+    box-shadow:0 14px 30px -18px rgba(201,85,110,.55), inset 0 -4px 10px rgba(201,85,110,.10);
+    display:grid;place-items:center;font-size:40px;line-height:1;user-select:none;
+    transition:transform .18s ease;
+  }
+  .hero .cake:active{transform:scale(.94)}
+  .brand{
+    font-size:21px;font-weight:800;letter-spacing:.5px;margin:0;color:var(--ink);
+    font-family:"Songti SC","STSong","PingFang SC",serif;
+  }
+  .brand em{font-style:normal;color:var(--rose-deep)}
+  .slogan{font-size:12px;color:var(--ink-soft);margin:7px 0 0;letter-spacing:.6px}
+  .slogan i{font-style:normal;color:var(--rose);margin:0 4px}
+
+  /* ---------- 剩余条数 ---------- */
+  .meter{
+    margin:14px 0 10px;display:flex;align-items:center;gap:10px;
+    background:rgba(255,255,255,.72);border:1px solid var(--line);
+    border-radius:14px;padding:9px 13px;box-shadow:var(--shadow);backdrop-filter:blur(6px);
+  }
+  .meter .dot{width:7px;height:7px;border-radius:50%;background:var(--pink-300);flex:0 0 auto}
+  .meter .t{font-size:11.5px;color:var(--ink-soft);flex:1}
+  .meter .t b{color:var(--rose-deep);font-size:13px}
+  .meter .bar{width:74px;height:6px;border-radius:99px;background:#f8e5ea;overflow:hidden;flex:0 0 auto}
+  .meter .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--pink-300),var(--rose));transition:width .3s}
+
+  /* ---------- 标签 ---------- */
+  .tags{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .tags::-webkit-scrollbar{display:none}
+  .tag{
+    flex:0 0 auto;border:1px solid var(--line);background:rgba(255,255,255,.8);
+    color:var(--ink-soft);font-size:12.5px;padding:8px 14px;border-radius:99px;
+    transition:.15s;white-space:nowrap;font-weight:500;
+  }
+  .tag.on{background:var(--rose);border-color:var(--rose);color:#fff;box-shadow:0 6px 16px -8px var(--rose)}
+  .tag:active{transform:scale(.97)}
+
+  /* ---------- 评价卡 ---------- */
+  .list{display:flex;flex-direction:column;gap:12px}
+  .card{
+    position:relative;background:#fff;border:1px solid var(--line);border-radius:var(--r);
+    padding:16px 16px 13px;box-shadow:var(--shadow);overflow:hidden;
+    transition:transform .18s ease, opacity .25s ease;
+  }
+  .card::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:linear-gradient(180deg,var(--pink-300),rgba(249,180,196,0));
+  }
+  .card .top{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+  .badge{
+    font-size:10px;font-weight:700;letter-spacing:.4px;color:var(--rose-deep);
+    background:var(--pink-100);border-radius:6px;padding:2.5px 7px;
+  }
+  .badge.g{color:#8a6a24;background:#fdf4df}
+  .meta{font-size:10.5px;color:#b9a4aa;margin-left:auto;white-space:nowrap}
+  .text{
+    font-size:14.5px;line-height:1.95;letter-spacing:.2px;color:#453438;
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+    transition:all .2s;
+  }
+  .card.open .text{-webkit-line-clamp:unset;display:block}
+  .card .actions{display:flex;gap:9px;margin-top:13px}
+  .btn-copy{
+    flex:1;border:0;border-radius:12px;padding:11px;font-size:13.5px;font-weight:700;color:#fff;
+    background:linear-gradient(135deg,#f08ba3,#d96b86);
+    box-shadow:0 8px 18px -12px rgba(217,107,134,.9);
+    transition:.15s;
+  }
+  .btn-copy:active{transform:scale(.985);opacity:.92}
+  .btn-more{
+    flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--ink-soft);
+    border-radius:12px;padding:11px 14px;font-size:12.5px;font-weight:600;
+  }
+  /* 已用 */
+  .card.used{opacity:.5;pointer-events:none}
+  .card.used .btn-copy{background:#e9dfe3;box-shadow:none;color:#a99aa1}
+  .card.used::after{
+    content:"已推荐给其他客人";position:absolute;right:12px;top:12px;
+    font-size:10px;color:var(--rose-deep);background:var(--pink-100);
+    padding:3px 8px;border-radius:99px;font-weight:600;
+  }
+
+  /* ---------- 空状态 ---------- */
+  .empty{text-align:center;padding:52px 16px;color:var(--ink-soft)}
+  .empty .ico{font-size:38px;opacity:.75}
+  .empty p{font-size:13px;line-height:1.9;margin:12px 0 0}
+  .empty button{
+    margin-top:16px;border:1px solid var(--pink-200);background:#fff;color:var(--rose-deep);
+    border-radius:99px;padding:10px 20px;font-size:12.5px;font-weight:600;
+  }
+
+  /* ---------- 底部说明 ---------- */
+  .foot{font-size:10.5px;line-height:1.9;color:#bfaab0;text-align:center;padding:26px 10px 0}
+  .foot b{color:var(--ink-soft);font-weight:600}
+
+  /* ---------- 弹层 ---------- */
+  .mask{
+    position:fixed;inset:0;background:rgba(74,59,64,.42);backdrop-filter:blur(3px);
+    display:flex;align-items:flex-end;justify-content:center;z-index:60;
+    opacity:0;pointer-events:none;transition:.22s;
+  }
+  .mask.show{opacity:1;pointer-events:auto}
+  .sheet{
+    width:100%;max-width:520px;background:#fff;border-radius:24px 24px 0 0;
+    padding:22px 20px calc(22px + env(safe-area-inset-bottom));
+    transform:translateY(18px);transition:.25s cubic-bezier(.22,.9,.3,1);
+    box-shadow:0 -20px 50px -30px rgba(74,59,64,.6);
+  }
+  .mask.show .sheet{transform:translateY(0)}
+  .sheet .ok{width:44px;height:44px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#ffe3ea,#ffd0dc);color:var(--rose-deep);font-size:21px}
+  .sheet h3{font-size:16px;text-align:center;margin:0 0 6px;font-weight:800}
+  .sheet .sub{font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.8;margin:0 0 16px}
+  .apps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .app{
+    border:1px solid var(--line);background:var(--pink-50);border-radius:16px;
+    padding:14px 6px 12px;text-align:center;text-decoration:none;color:var(--ink);display:block;
+  }
+  .app .ic{width:38px;height:38px;border-radius:12px;margin:0 auto 8px;display:grid;place-items:center;
+    font-size:19px;color:#fff;font-weight:800}
+  .app .ic.dy{background:linear-gradient(135deg,#2b2f36,#000)}
+  .app .ic.dp{background:linear-gradient(135deg,#ff7a1a,#ff9f43)}
+  .app .ic.mt{background:linear-gradient(135deg,#ffd200,#ffb800);color:#5a4a00}
+  .app .nm{font-size:12px;font-weight:700}
+  .app .ds{font-size:9.5px;color:#b9a4aa;margin-top:2px}
+  .sheet .close{margin-top:14px;width:100%;border:0;background:#f7eef1;color:var(--ink-soft);
+    border-radius:13px;padding:12px;font-size:13px;font-weight:600}
+
+  /* 轻提示 */
+  .toast{
+    position:fixed;left:50%;bottom:42px;transform:translate(-50%,16px);z-index:99;
+    background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;padding:11px 18px;border-radius:99px;
+    opacity:0;pointer-events:none;transition:.22s;box-shadow:0 12px 30px -14px rgba(0,0,0,.5);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* ---------- 隐藏后台 ---------- */
+  #admin{
+    position:fixed;inset:0;z-index:80;background:#fff;overflow:auto;
+    transform:translateY(100%);transition:transform .3s cubic-bezier(.22,.9,.3,1);
+  }
+  #admin.show{transform:translateY(0)}
+  .adm-head{
+    position:sticky;top:0;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);padding:14px 16px;display:flex;align-items:center;gap:10px;
+  }
+  .adm-head h2{font-size:15px;margin:0;font-weight:800}
+  .adm-head .x{margin-left:auto;border:0;background:#f7eef1;color:var(--ink-soft);
+    width:32px;height:32px;border-radius:50%;font-size:16px}
+  .adm-body{padding:16px;max-width:720px;margin:0 auto}
+  .panel{background:var(--pink-50);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+  .panel .hd{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;margin-bottom:10px}
+  .panel .hd span{margin-left:auto;font-size:11px;color:var(--ink-soft);font-weight:500}
+  .adm-input{
+    width:100%;min-height:76px;border:1px solid var(--line);border-radius:12px;padding:11px;
+    font-size:13px;line-height:1.7;outline:none;font-family:inherit;background:#fff;color:var(--ink);resize:vertical;
+  }
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .row button{border:0;border-radius:11px;padding:10px 14px;font-size:12.5px;font-weight:700}
+  .b-main{background:var(--rose);color:#fff}
+  .b-soft{background:#fff;border:1px solid var(--line);color:var(--ink-soft)}
+  .adm-list{max-height:none;overflow:visible}
+  .adm-item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px;margin-bottom:9px}
+  .adm-item .txt{font-size:12.5px;line-height:1.75;color:#4f4045;white-space:pre-wrap}
+  .adm-item .m{display:flex;align-items:center;gap:7px;margin-top:8px;flex-wrap:wrap}
+  .adm-item .m .k{font-size:10px;color:#a9979d;background:#faf2f4;padding:2px 7px;border-radius:99px}
+  .adm-item .m button{margin-left:auto;border:1px solid #f3d9e0;background:#fff;color:var(--rose-deep);
+    border-radius:9px;padding:6px 11px;font-size:11px;font-weight:600}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
+  .stat-row .s{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px;text-align:center}
+  .stat-row .s .n{font-size:20px;font-weight:800;color:var(--rose-deep)}
+  .stat-row .s .l{font-size:10.5px;color:var(--ink-soft);margin-top:2px}
+  .lock{max-width:320px;margin:60px auto;padding:0 20px;text-align:center}
+  .lock input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:15px;
+    text-align:center;outline:none;letter-spacing:4px}
+  .lock p{font-size:11.5px;color:var(--ink-soft);line-height:1.8}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="hero">
+    <div class="cake" id="cake" role="img" aria-label="蛋糕">🎂</div>
+    <h1 class="brand" id="brand">六月里烘焙<em>·</em>DIY</h1>
+    <p class="slogan">谢谢你喜欢这里<i>·</i>挑一句你想说的</p>
+  </div>
+
+  <div class="meter">
+    <span class="dot"></span>
+    <span class="t">还剩 <b id="leftN">0</b> 条可选，点一下就能复制</span>
+    <span class="bar"><i id="leftBar" style="width:100%"></i></span>
+  </div>
+
+  <div class="tags" id="tags"></div>
+  <div class="list" id="list"></div>
+
+  <p class="foot">
+    <b>小提示：</b>复制后可以直接粘到抖音订单页的评价框里。<br>
+    改动两个字，会更像你自己写的。
+  </p>
+  <p class="foot" style="padding-top:6px;font-size:10px;color:#e2ccd3" id="hint3">·</p>
+</div>
+
+<!-- 复制成功 → 跳转弹窗 -->
+<div class="mask" id="mask">
+  <div class="sheet">
+    <div class="ok">✓</div>
+    <h3>文案已复制</h3>
+    <p class="sub">去下面任意一个平台，在订单里找到「写评价」<br>长按输入框，粘贴就行</p>
+    <div class="apps">
+      <a class="app" data-app="douyin" href="javascript:;">
+        <span class="ic dy">抖</span>
+        <span class="nm">抖音</span>
+        <span class="ds">团购订单·评价</span>
+      </a>
+      <a class="app" data-app="dianping" href="javascript:;">
+        <span class="ic dp">评</span>
+        <span class="nm">大众点评</span>
+        <span class="ds">写评价</span>
+      </a>
+      <a class="app" data-app="meituan" href="javascript:;">
+        <span class="ic mt">美</span>
+        <span class="nm">美团</span>
+        <span class="ds">订单·评价</span>
+      </a>
+    </div>
+    <button class="close" id="closeSheet">好，我去写评价</button>
+  </div>
+</div>
+
+<!-- 隐藏后台 -->
+<div id="admin">
+  <div class="adm-head">
+    <h2>好评库后台</h2>
+    <button class="x" id="admClose">✕</button>
+  </div>
+  <div class="adm-body" id="admBody">
+    <div class="lock" id="lockPane">
+      <p style="font-size:34px;margin:0 0 6px">🔒</p>
+      <p>请输入管理密码</p>
+      <input type="password" id="pin" inputmode="numeric" placeholder="••••" autocomplete="off">
+      <div class="row" style="justify-content:center">
+        <button class="b-main" id="pinGo">进入</button>
+      </div>
+      <p id="pinTip" style="color:#e05c7a;margin-top:10px"></p>
+    </div>
+
+    <div id="admMain" class="hidden">
+      <div class="stat-row">
+        <div class="s"><div class="n" id="sTotal">0</div><div class="l">库内总条数</div></div>
+        <div class="s"><div class="n" id="sLeft">0</div><div class="l">顾客还能看到</div></div>
+        <div class="s"><div class="n" id="sUsed">0</div><div class="l">已被复制</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="hd">展示设置<span>只影响这台手机</span></div>
+        <div class="row" style="align-items:center;margin-top:0">
+          <label style="font-size:12px;color:#8b747b;width:100%">每天最多展示几条</label>
+          <input id="setMax" type="number" min="3" max="60" value="15"
+            style="width:80px;border:1px solid var(--line);border-radius:9px;padding:8px;background:#fff;color:#4a3b40;font-size:13px;text-align:center">
+          <label style="font-size:12px;color:#8b747b">条</label>
+          <button class="b-soft" id="setMaxBtn">保存</button>
+        </div>
+        <div class="row" style="align-items:center">
+          <label style="font-size:12px;color:#8b747b;width:100%">管理密码（默认 8888）</label>
+          <input id="setPin" type="text" maxlength="8" placeholder="输新密码"
+            style="width:130px;border:1px solid var(--line);border-radius:9px;padding:8px;background:#fff;color:#4a3b40;font-size:13px">
+          <button class="b-soft" id="setPinBtn">保存</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="hd">新增一条好评<span>至少 30 字</span></div>
+        <textarea class="adm-input" id="newTxt" placeholder="粘贴一条你觉得写得好的好评…"></textarea>
+        <div class="row">
+          <button class="b-main" id="addBtn">加入库</button>
+          <button class="b-soft" id="aiBtn">自动补充 5 条</button>
+          <button class="b-soft" id="resetBtn">恢复全部（重置已用）</button>
+        </div>
+        <p style="font-size:10.5px;color:#b9a4aa;line-height:1.8;margin:9px 0 0">
+          自动补充是从真实好评里拆句重组，不会编造店里没有的商品。生成后建议过一眼再用。
+        </p>
+      </div>
+
+      <div class="panel" style="background:#fff">
+        <div class="hd">全部文案<span id="admCount"></span></div>
+        <div class="adm-list" id="admList"></div>
+      </div>
+
+      <div class="panel">
+        <div class="hd">数据备份</div>
+        <div class="row">
+          <button class="b-soft" id="expBtn">导出 JSON</button>
+          <button class="b-soft" id="impBtn">导入 JSON</button>
+          <input type="file" id="impFile" accept=".json" class="hidden">
+        </div>
+        <p style="font-size:10.5px;color:#b9a4aa;line-height:1.8;margin:9px 0 0">
+          顾客的「已复制」记录只存在这台手机浏览器里。换设备或清缓存会重置。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">已复制</div>
+
+<script id="seed" type="application/json">
+[
+{"id":"r01","cat":["全部","超赞","生日纪念"],"text":"和好朋友来做生日蛋糕，全程小姐姐都在旁边耐心指导，从抹奶油到摆装饰一步步带着做，手残党也完全没有翻车。成品比想象中好看太多，拍了好多照片，玩了一下午，性价比真的很高。"},
+{"id":"r02","cat":["全部","超赞","打卡出片"],"text":"店内装饰特别可爱，到处都是能拍照的小布置，随手拍都出片。做蛋糕的时候小姐姐一直在旁边指导，不会的地方会主动过来教，全程一点都不尴尬。做完成就感满满，很适合和闺蜜一起过来。"},
+{"id":"r03","cat":["全部","超赞","性价比"],"text":"团购的学生党价格很友好，不用等位，到店就能开始。店员全程在旁边搭把手，环境干净，第一次做蛋糕也不用紧张，做完感觉自己还挺有天赋的。"},
+{"id":"r04","cat":["全部","超赞","打卡出片"],"text":"店就在熊猫基地对面，做完蛋糕顺便去看了熊猫，安排得很顺。店里环境很好，工作人员一直很细心地引导我们，做蛋糕的窗户边还能看到对面的风景，整体体验超级棒，来成都玩的话很推荐。"},
+{"id":"r05","cat":["全部","超赞","环境服务"],"text":"一进门就闻到很浓的奶香味，店里收拾得特别干净，装饰是小清新那种，待着很舒服。店员小姐姐说话很温柔，教得很细，奶油用的是动物奶油，吃起来一点都不腻，整体体验非常好。"},
+{"id":"r06","cat":["全部","超赞","情绪价值"],"text":"小姐姐人特别好，会一直夸，情绪价值直接拉满。第一次做蛋糕本来挺紧张的，结果全程被耐心带着做，做出来还挺像样。店里环境也很好，安静舒服，适合慢慢待一下午。"},
+{"id":"r07","cat":["全部","超赞","亲子"],"text":"周末带娃来的，店员会放慢节奏陪孩子一起挤奶油、摆水果，耐心得不行。店里干净，用具也收得整齐，孩子做完抱着盒子不肯撒手，下次还要来。"},
+{"id":"r08","cat":["全部","超赞","约会闺蜜"],"text":"和对象一起来的，两个人安安静静做了一个下午，氛围特别好。店员全程在旁边指导，不会的地方会帮忙救场，做出来造型挺好看的。成品包装也很精致，带回去送人挺有面子。"},
+{"id":"r09","cat":["全部","性价比"],"text":"四寸蛋糕性价比很高，奶油和夹心都给得很实在，水果也很新鲜。小姐姐教得很耐心，从选款式到裱花都会一步步说，做完还能自己拍照，这个价格能玩一下午真的很值。"},
+{"id":"r10","cat":["全部","打卡出片"],"text":"店里的布置都很用心，小装饰多得像在逛展，随便一个角落都能拍。做蛋糕的台面收拾得很干净，工具和材料都摆得整整齐齐，拍照特别好看，朋友圈发出去一堆人问在哪。"},
+{"id":"r11","cat":["全部","生日纪念"],"text":"给朋友准备生日惊喜，选了自己动手做蛋糕。小姐姐会提前问想做什么款式，做的时候一直在旁边搭把手，气氛很轻松。朋友看到成品的时候特别惊喜，这次生日过得很特别。"},
+{"id":"r12","cat":["全部","环境服务"],"text":"店里很安静，放的音乐也轻轻的，坐着做蛋糕整个人都放松下来。小姐姐服务很周到，会主动加水、递工具，奶油和夹心的口感都很清爽，吃完不会觉得腻，下次还想来。"},
+{"id":"r13","cat":["全部","亲子"],"text":"带孩子来做了个小蛋糕，全程一个多小时，孩子一直很有兴趣。店员会蹲下来跟小朋友说话，教得很细，也不会催，环境也干净，家长在边上看着就行，很适合周末带娃过来。"},
+{"id":"r14","cat":["全部","约会闺蜜"],"text":"和闺蜜约了一起做蛋糕，从挑款式开始就很开心。小姐姐会帮忙拍合照，还会给建议怎么摆更好看，做出来的成品颜值很高。店里不大但很温馨，两个人玩了一下午，聊得也很尽兴。"},
+{"id":"r15","cat":["全部","性价比"],"text":"第二次来了，上次做了蛋糕这次做饼干，价格都很实在。材料给得足，做法也简单，小姐姐会先演示一遍然后自己动手，跟着做基本不会出错，成品带回家分给同事，都说味道不错。"},
+{"id":"r16","cat":["全部","打卡出片"],"text":"冲着拍照来的，结果做蛋糕的过程比拍照还好玩。店里光线很好，装饰风格很可爱，拍照不用加滤镜。小姐姐一开始还会紧张我们做不好，后来发现完全想多了，手把手教很快就上手了。"},
+{"id":"r17","cat":["全部","情绪价值"],"text":"一个人来也不尴尬，小姐姐会陪你聊天，教的时候特别有耐心，做得不好也不会笑话你，还会说没关系慢慢来。做完看着自己的作品，那种成就感真的很难形容，下次还来。"},
+{"id":"r18","cat":["全部","情绪价值"],"text":"第一次自己做蛋糕，本来担心会做得很惨，结果小姐姐一直在旁边鼓励，还帮忙修补了一下，最后成品居然还挺好看的。整个过程很治愈，周末来这一趟心情都变好了。"},
+{"id":"r19","cat":["全部","生日纪念"],"text":"纪念日选了来做蛋糕，提前跟店里说了想要的颜色，到店以后材料都准备好了。小姐姐教得很细，两个人一边做一边笑，成品虽然不完美但很有纪念意义，照片留着以后看也很暖。"},
+{"id":"r20","cat":["全部","约会闺蜜"],"text":"两个人做了一个四寸的，大小刚刚好，做完还能当场吃掉。奶油是动物奶油，吃起来很清爽，夹心的水果也很新鲜。环境干净，坐着做的位置也宽敞，适合慢慢消磨一个下午。"},
+{"id":"r21","cat":["全部","亲子"],"text":"小朋友第一次自己做蛋糕，选了卡通造型，做的时候特别专注。店员很有耐心，会一步步教怎么挤奶油、怎么摆装饰，做完还帮忙装盒，孩子一路抱着回家，开心得不行。"},
+{"id":"r22","cat":["全部","环境服务"],"text":"店里很干净，台面和工具都擦得很仔细，做之前还会提醒洗手。小姐姐说话轻声细语的，教的时候会先做一遍示范，再让自己动手，不会一直在旁边盯着，感觉挺自在的。"},
+{"id":"r23","cat":["全部","性价比"],"text":"对比了几家DIY店选的这家，价格不算贵，材料和款式都很丰富。做蛋糕的流程安排得很好，不会手忙脚乱，小姐姐也会及时过来帮忙，最后做出来比想象中好看，感觉挺值的。"},
+{"id":"r24","cat":["全部","打卡出片"],"text":"店里的风格很可爱，有很多小摆件和装饰，拍照特别出片。做蛋糕的时候小姐姐会主动帮忙拍几张，还教怎么摆姿势，成片效果很好，发朋友圈收获了一堆点赞。"},
+{"id":"r25","cat":["全部","环境服务"],"text":"预约的时候小姐姐在电话里讲得很清楚，到店以后也没有等，直接开始做。店里环境安静，坐着很舒服，做蛋糕的过程也很放松，走的时候还帮忙打包好，服务很周到。"},
+{"id":"r26","cat":["全部","情绪价值"],"text":"体验特别好，小姐姐全程都很温柔，做错的地方会帮忙补救，还会说没事没事，慢慢来。做完以后成就感特别强，感觉这趟没白来，下次想带妈妈一起来做一次。"},
+{"id":"r27","cat":["全部","生日纪念"],"text":"朋友生日前一天来做的蛋糕，选了比较简单的款式，做完带回去正好当生日蛋糕。奶油不腻，里面夹的水果也很新鲜，朋友说比买的好吃，而且自己做的更有心意。"},
+{"id":"r28","cat":["全部","亲子"],"text":"带娃来打发周末，店里人不多，做蛋糕的过程很安静。店员会主动过来问要不要帮忙，孩子做装饰的时候也没催，慢慢做完才走，整体感觉挺舒服的，以后还会再来。"},
+{"id":"r29","cat":["全部","约会闺蜜"],"text":"和闺蜜第一次来，从进门开始就被店里的布置萌到。做蛋糕的时候两个人一边做一边拍照，小姐姐还帮忙调整了奶油的角度，最后成品很好看，我们俩都挺满意的。"},
+{"id":"r30","cat":["全部","性价比"],"text":"这个价格能自己做蛋糕还能带走，感觉挺划算的。材料给得足，款式也多，做之前可以慢慢挑，小姐姐不会催。做完还能在店里拍几张照片，整个体验下来很舒服。"},
+{"id":"r31","cat":["全部","环境服务"],"text":"店里很香，一进去就是奶油和饼干的味道，闻着就开心。环境收拾得很干净，工具摆放整齐，做的时候小姐姐会提醒注意的地方，整个过程轻松又好玩，推荐给了身边好几个朋友。"},
+{"id":"r32","cat":["全部","情绪价值"],"text":"被朋友安利来的，本来只是想随便做做，结果被小姐姐的耐心圈粉了。教得特别细，从打奶油到裱花一步步来，做不好还会安慰你，做完以后成就感很强，下次还想再来。"},
+{"id":"r33","cat":["全部","打卡出片"],"text":"店里整体是粉色系，拍照特别好看，随便拍都出片。做蛋糕的时候小姐姐会在旁边指导，也会帮忙拍几张过程照，做完以后成品和照片都挺满意的，适合喜欢拍照的女生来玩。"},
+{"id":"r34","cat":["全部","亲子"],"text":"带孩子来做了饼干，面团和模具都准备好了，孩子自己压形状就行，操作很简单。店员很有耐心，会提醒烤箱时间，做出来的饼干香香的，孩子特别有成就感。"},
+{"id":"r35","cat":["全部","生日纪念"],"text":"和男朋友一起做了个蛋糕，算是提前庆祝生日。小姐姐帮忙准备了小装饰，做的时候一直在旁边提醒，最后成品还挺像那么回事，两个人拍了合照留作纪念，很值得。"},
+{"id":"r36","cat":["全部","性价比"],"text":"四寸的自己做，一个人吃刚刚好，价格也不贵。材料很齐全，想加什么都可以自己选，小姐姐会帮忙算好量，做出来的蛋糕奶油和果肉都很足，比想象中好吃。"},
+{"id":"r37","cat":["全部","环境服务"],"text":"店里的感觉很像朋友家，进门就很放松，没有那种商业化的压迫感。做蛋糕的过程小姐姐会陪着你聊，问你想要什么效果，不会硬塞套餐，体验下来很舒服。"},
+{"id":"r38","cat":["全部","情绪价值"],"text":"最近压力有点大，来做了个蛋糕意外地解压。全程专心做一件事，什么都不用想，小姐姐也不打扰你，做完看着自己的作品还挺治愈的，下次心情不好的时候还来。"},
+{"id":"r39","cat":["全部","约会闺蜜"],"text":"跟朋友约着来做蛋糕，本来以为很难，结果跟着小姐姐教的步骤一步步来，比想象中简单很多。做完还能在店里拍几张，成品带回去家人也说好看，下次想试试做饼干。"},
+{"id":"r40","cat":["全部","打卡出片"],"text":"抖音刷到这家店才来的，到店以后发现比视频里还好看。做蛋糕的时候小姐姐会帮忙拍照，角度找得比我还好，成品和照片都很满意，这一趟没有踩雷，会推荐给同事。"}
+]
+</script>
+
+<script>
+(function () {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const LS_KEY = "liuyueli_reviews_v1";
+  const USED_KEY = "liuyueli_used_v1";
+  const PIN_KEY = "liuyueli_pin_v1";
+
+  /* ---------- 状态 ---------- */
+  let reviews = [];
+  let used = [];
+  let filter = "全部";
+
+  const SEED = JSON.parse(document.getElementById("seed").textContent);
+
+  /* ---------- 存储 ---------- */
+  function load() {
+    try {
+      const r = localStorage.getItem(LS_KEY);
+      const u = localStorage.getItem(USED_KEY);
+      if (r) reviews = JSON.parse(r);
+      if (u) used = JSON.parse(u);
+    } catch (e) {}
+    if (!reviews || !reviews.length) { reviews = SEED.slice(); saveReviews(); }
+    if (!Array.isArray(used)) used = [];
+    // 清理已不存在于库里的 used id
+    used = used.filter(id => reviews.some(x => x.id === id));
+    saveUsed();
+  }
+  function saveReviews() { try { localStorage.setItem(LS_KEY, JSON.stringify(reviews)); } catch (e) {} }
+  function saveUsed() { try { localStorage.setItem(USED_KEY, JSON.stringify(used)); } catch (e) {} }
+  function isUsed(id) { return used.indexOf(id) > -1; }
+  function markUsed(id) { if (!isUsed(id)) { used.push(id); saveUsed(); } }
+
+  /* ---------- 每日上限：本机当天最多展示 N 条（后台可改） ---------- */
+  const DAY_KEY = "liuyueli_day_v1";
+  const MAX_KEY = "liuyueli_max_v1";
+  const DEFAULT_MAX = 15;
+  function dailyMax() {
+    const n = parseInt(localStorage.getItem(MAX_KEY) || "", 10);
+    return (n >= 3 && n <= 60) ? n : DEFAULT_MAX;
+  }
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+  function readDay() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(DAY_KEY) || "null");
+      if (raw && raw.d === todayKey()) return raw;
+    } catch (e) {}
+    return { d: todayKey(), used: [] };
+  }
+  function markDay(id) {
+    const day = readDay();
+    if (day.used.indexOf(id) < 0) day.used.push(id);
+    try { localStorage.setItem(DAY_KEY, JSON.stringify(day)); } catch (e) {}
+  }
+  function leftToday() {
+    return Math.max(0, dailyMax() - readDay().used.length);
+  }
+
+  /* ---------- 渲染 ---------- */
+  function renderTags() {
+    const cats = ["全部", "超赞", "生日纪念", "约会闺蜜", "带娃亲子", "打卡出片", "环境服务", "情绪价值", "性价比"];
+    $("#tags").innerHTML = cats.map(c =>
+      `<button class="tag${c === filter ? " on" : ""}" data-c="${c}">${c === "超赞" ? "🔥 大家都夸的" : c}</button>`
+    ).join("");
+    $$("#tags .tag").forEach(b => {
+      b.addEventListener("click", () => { filter = b.dataset.c; renderTags(); renderList(); });
+    });
+  }
+
+  function renderList() {
+    const avail = reviews.filter(r => !isUsed(r.id));
+    const list = avail.filter(r => filter === "全部" || (r.cat || []).indexOf(filter) > -1);
+    const quota = leftToday();
+    const left = Math.min(avail.length, quota);
+    const total = reviews.length;
+    $("#leftN").textContent = left;
+    $("#leftBar").style.width = (total ? Math.round(left / Math.min(total, dailyMax()) * 100) : 0) + "%";
+
+    if (!list.length && !avail.length) {
+      $("#list").innerHTML = `<div class="empty"><div class="ico">🌸</div><p>都被领走啦～<br>谢谢你愿意帮我们写评价</p></div>`;
+      return;
+    }
+    if (!quota) {
+      $("#list").innerHTML = `<div class="empty"><div class="ico">🌙</div><p>今天的推荐额度用完啦<br>明天再来，我们还留了别的句子</p></div>`;
+      return;
+    }
+    if (!reviews.length) {
+      $("#list").innerHTML = `<div class="empty"><div class="ico">🎀</div><p>评价库还是空的<br>轻点页面上方的蛋糕 3 次进后台</p></div>`;
+      return;
+    }
+    if (!list.length) {
+      $("#list").innerHTML = `<div class="empty"><div class="ico">🌷</div><p>这个分类暂时没有可选的<br>换个标签看看</p></div>`;
+      return;
+    }
+
+    $("#list").innerHTML = list.map((r, i) => {
+      const cats = (r.cat || []).filter(c => c !== "全部");
+      const hot = cats.indexOf("超赞") > -1;
+      const cat0 = cats.filter(c => c !== "超赞")[0] || "真实体验";
+      return `<article class="card" data-id="${r.id}">
+        <div class="top">
+          <span class="badge${hot ? " g" : ""}">${hot ? "高赞原文" : cat0}</span>
+          <span class="meta">${(r.text || "").length} 字</span>
+        </div>
+        <div class="text">${esc(r.text)}</div>
+        <div class="actions">
+          <button class="btn-copy" data-copy="${r.id}">复制这句</button>
+          <button class="btn-more" data-more="${r.id}">展开</button>
+        </div>
+      </article>`;
+    }).join("");
+
+    $$("[data-copy]").forEach(b => b.addEventListener("click", () => doCopy(b.dataset.copy)));
+    $$("[data-more]").forEach(b => b.addEventListener("click", () => {
+      const card = b.closest(".card");
+      card.classList.toggle("open");
+      b.textContent = card.classList.contains("open") ? "收起" : "展开";
+    }));
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  }
+
+  /* ---------- 复制 ---------- */
+  function doCopy(id) {
+    const r = reviews.find(x => x.id === id);
+    if (!r) return;
+    copyText(r.text).then(ok => {
+      if (!ok) {
+        // 极端情况（老浏览器/隐私模式）兜底：把原文弹出来让客人自己长按复制
+        showManualCopy(r.text);
+        return;
+      }
+      markUsed(id);
+      markDay(id);
+      renderList();
+      openSheet();
+    });
+  }
+
+  function copyText(text) {
+    return new Promise(async res => {
+      // 优先异步剪贴板 API（现代浏览器、HTTPS 下最稳）
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          res(true);
+          return;
+        } catch (e) { /* 落到下一档 */ }
+      }
+      // 再试老的 execCommand
+      if (fallback(text)) { res(true); return; }
+      // 都不行 → 走手动复制
+      res(false);
+    });
+  }
+  function fallback(text) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:0;left:-9999px;opacity:0";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+
+  // 手动复制兜底
+  function showManualCopy(text) {
+    const mask = document.createElement("div");
+    mask.className = "mask show";
+    mask.innerHTML = `<div class="sheet">
+      <div class="ok">✎</div>
+      <h3>长按这段文字复制</h3>
+      <p class="sub">你的浏览器不让自动复制，直接长按下面的字<br>选「全选」→「复制」也一样</p>
+      <textarea readonly style="width:100%;height:130px;border:1px solid var(--line);border-radius:12px;padding:11px;font-size:13px;line-height:1.8;font-family:inherit;color:#4f4045;background:#fffafb;resize:none">${esc(text)}</textarea>
+      <button class="close">知道了</button>
+    </div>`;
+    document.body.appendChild(mask);
+    const close = () => mask.remove();
+    mask.querySelector(".close").addEventListener("click", close);
+    mask.addEventListener("click", e => { if (e.target === mask) close(); });
+  }
+
+  let toastTimer = null;
+  function toast(msg) {
+    const t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 1600);
+  }
+
+  /* ---------- 弹窗 & 跳转 ---------- */
+  function openSheet() { $("#mask").classList.add("show"); }
+  function closeSheet() { $("#mask").classList.remove("show"); }
+  $("#closeSheet").addEventListener("click", closeSheet);
+  $("#mask").addEventListener("click", e => { if (e.target === $("#mask")) closeSheet(); });
+
+  // 抖音 / 点评 / 美团 scheme（失败则回落到网页）
+  const APPS = {
+    douyin: {
+      scheme: "snssdk1128://", web: "https://www.douyin.com/",
+      tip: "打开抖音后，进「我的订单」→ 找到这单 → 写评价"
+    },
+    dianping: {
+      scheme: "dianping://", web: "https://www.dianping.com/",
+      tip: "点评里搜「六月里烘焙」→ 写评价"
+    },
+    meituan: {
+      scheme: "imeituan://www.meituan.com", web: "https://www.meituan.com/",
+      tip: "美团里进「我的订单」→ 找到这单 → 评价"
+    }
+  };
+  $$(".app").forEach(a => {
+    a.addEventListener("click", e => {
+      e.preventDefault();
+      const cfg = APPS[a.dataset.app];
+      if (!cfg) return;
+      const t0 = Date.now();
+      const ifr = document.createElement("iframe");
+      ifr.style.cssText = "display:none";
+      ifr.src = cfg.scheme;
+      document.body.appendChild(ifr);
+      setTimeout(() => {
+        document.body.removeChild(ifr);
+        // 如果页面还在这里（没被切走），说明没装 App → 给文字指引
+        if (document.visibilityState === "visible" && Date.now() - t0 > 900) {
+          toast(cfg.tip);
+        }
+      }, 900);
+    });
+  });
+
+  /* ---------- 隐藏后台：连点蛋糕 / 标题 3 次 ---------- */
+  let taps = 0, tapTimer = null;
+  function countTap() {
+    taps++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => { taps = 0; }, 1200);
+    if (taps >= 3) {
+      taps = 0;
+      openAdmin();
+    }
+  }
+  $("#cake").addEventListener("click", countTap);
+  $("#brand").addEventListener("click", countTap);
+
+  function openAdmin() {
+    $("#admin").classList.add("show");
+    if (sessionStorage.getItem("liuyueli_unlocked") === "1") showAdmMain();
+    else { $("#lockPane").classList.remove("hidden"); $("#admMain").classList.add("hidden"); }
+  }
+  $("#admClose").addEventListener("click", () => { $("#admin").classList.remove("show"); renderList(); });
+
+  /* 密码 */
+  function getPin() { return localStorage.getItem(PIN_KEY) || "8888"; }
+  $("#pinGo").addEventListener("click", () => {
+    if ($("#pin").value === getPin()) {
+      sessionStorage.setItem("liuyueli_unlocked", "1");
+      $("#pinTip").textContent = "";
+      showAdmMain();
+    } else {
+      $("#pinTip").textContent = "密码不对，默认 8888";
+    }
+  });
+  $("#pin").addEventListener("keydown", e => { if (e.key === "Enter") $("#pinGo").click(); });
+
+  /* 设置：每日额度 / 管理密码 */
+  $("#setMaxBtn").addEventListener("click", () => {
+    const n = parseInt($("#setMax").value, 10);
+    if (!(n >= 3 && n <= 60)) { toast("填 3~60 之间的数字"); return; }
+    localStorage.setItem(MAX_KEY, String(n));
+    toast("已设为每天 " + n + " 条");
+    renderList();
+  });
+  $("#setPinBtn").addEventListener("click", () => {
+    const p = ($("#setPin").value || "").trim();
+    if (!p) { toast("密码不能为空"); return; }
+    if (p.length > 8) { toast("最多 8 位"); return; }
+    localStorage.setItem(PIN_KEY, p);
+    toast("管理密码已更新");
+  });
+
+  function showAdmMain() {
+    $("#lockPane").classList.add("hidden");
+    $("#admMain").classList.remove("hidden");
+    renderAdmin();
+  }
+
+  function renderAdmin() {
+    const left = reviews.filter(r => !isUsed(r.id)).length;
+    $("#sTotal").textContent = reviews.length;
+    $("#sLeft").textContent = left;
+    $("#sUsed").textContent = reviews.length - left;
+    $("#admCount").textContent = `共 ${reviews.length} 条`;
+    if ($("#setMax")) $("#setMax").value = dailyMax();
+    if ($("#setPin")) $("#setPin").value = "";
+    $("#admList").innerHTML = reviews.map(r => {
+      const bad = (r.text || "").replace(/\s/g, "").length < 30;
+      return `<div class="adm-item">
+        <div class="txt">${esc(r.text)}</div>
+        <div class="m">
+          <span class="k">${r.id}</span>
+          <span class="k">${(r.cat || []).slice(1).join(" / ") || "未分类"}</span>
+          <span class="k"${bad ? ' style="color:#d9536f;background:#ffeef2"' : ""}>${(r.text || "").length} 字${bad ? " · 不足30" : ""}</span>
+          <span class="k"${isUsed(r.id) ? ' style="color:#c9556e"' : ""}>${isUsed(r.id) ? "已被复制" : "可展示"}</span>
+          <button data-del="${r.id}">${isUsed(r.id) ? "恢复" : "删除"}</button>
+        </div>
+      </div>`;
+    }).join("");
+    $$("[data-del]").forEach(b => b.addEventListener("click", () => toggleItem(b.dataset.del)));
+  }
+
+  function toggleItem(id) {
+    if (isUsed(id)) {
+      used = used.filter(x => x !== id);
+      saveUsed();
+    } else {
+      reviews = reviews.filter(x => x.id !== id);
+      saveReviews();
+    }
+    renderAdmin();
+  }
+
+  /* 新增 */
+  $("#addBtn").addEventListener("click", () => {
+    const t = ($("#newTxt").value || "").trim();
+    if (t.replace(/\s/g, "").length < 30) { toast("至少 30 个字"); return; }
+    addReview(t, ["全部", "环境服务"]);
+    $("#newTxt").value = "";
+    toast("已加入库");
+  });
+
+  function addReview(text, cats) {
+    reviews.push({ id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), cat: cats || ["全部"], text });
+    saveReviews();
+    renderAdmin();
+    renderList();
+  }
+
+  /* 自动补充：从真实好评里拆句重组（不编造商品） */
+  const PARTS = {
+    open: [
+      "和好朋友一起来做了个蛋糕，", "周末没事过来玩，", "带小朋友来做蛋糕，",
+      "跟对象约了一起来，", "第二次来了，", "被朋友安利过来的，",
+      "一个人来也不尴尬，", "团购来的，", "提前预约好才来的，"
+    ],
+    body: [
+      "小姐姐全程都在旁边耐心指导，从抹奶油到摆装饰一步步带着做，手残党也不会翻车",
+      "店员教得特别细，不会的地方会主动过来帮忙，做不好还会说没关系慢慢来",
+      "奶油用的是动物奶油，吃起来一点不腻，夹心的水果也很新鲜",
+      "店里的装饰特别可爱，到处都是能拍照的地方，随手拍都出片",
+      "环境收拾得很干净，台面和工具都摆得整整齐齐，坐着很舒服",
+      "材料给得很足，款式也很多，可以自己慢慢挑想要的造型",
+      "整个过程一个多小时，玩着玩着就过去了，一点都不觉得无聊",
+      "小姐姐会先示范一遍再让自己动手，不会一直在旁边盯着，很自在"
+    ],
+    close: [
+      "成品比想象中好看，拍了好多照片，玩了一下午，性价比真的高。",
+      "做完成就感满满，带回家家里人都说好看，下次还想再来。",
+      "整体体验很舒服，价格也实在，推荐给想体验DIY的朋友。",
+      "这一趟没有踩雷，会推荐给身边的同事和朋友。",
+      "走的时候还帮忙打包好，服务很周到，下次想试试做饼干。",
+      "比起买现成的蛋糕，自己动手做的这份心意更特别。"
+    ]
+  };
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function makeOne() {
+    const s = pick(PARTS.open) + pick(PARTS.body) + "，" + pick(PARTS.close);
+    return s.replace(/，，/g, "，");
+  }
+  $("#aiBtn").addEventListener("click", () => {
+    let n = 0, guard = 0;
+    while (n < 5 && guard < 80) {
+      guard++;
+      const s = makeOne();
+      if (s.replace(/\s/g, "").length < 30) continue;
+      // 去重：与现有文案前 20 字高度相似就跳过
+      const dup = reviews.some(r => r.text.slice(0, 20) === s.slice(0, 20));
+      if (dup) continue;
+      addReview(s, ["全部", "环境服务"]);
+      n++;
+    }
+    toast("补充了 " + n + " 条");
+  });
+
+  /* 重置 */
+  $("#resetBtn").addEventListener("click", () => {
+    if (!confirm("把所有「已复制」的标记清掉？顾客会重新看到全部文案。")) return;
+    used = [];
+    saveUsed();
+    renderAdmin();
+    renderList();
+    toast("已重置");
+  });
+
+  /* 导出 / 导入 */
+  $("#expBtn").addEventListener("click", () => {
+    const data = JSON.stringify({ reviews, used }, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "liuyueli-reviews-" + Date.now() + ".json";
+    a.click();
+  });
+  $("#impBtn").addEventListener("click", () => $("#impFile").click());
+  $("#impFile").addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const d = JSON.parse(rd.result);
+        if (!d.reviews || !Array.isArray(d.reviews)) throw new Error("格式不对");
+        reviews = d.reviews;
+        used = Array.isArray(d.used) ? d.used : [];
+        saveReviews(); saveUsed();
+        renderAdmin(); renderList();
+        toast("导入成功，共 " + reviews.length + " 条");
+      } catch (err) { toast("导入失败：" + err.message); }
+    };
+    rd.readAsText(f, "utf-8");
+  });
+
+  /* ---------- 启动 ---------- */
+  load();
+  renderTags();
+  renderList();
+  window.__app = {
+    get reviews() { return reviews; },
+    get used() { return used; },
+    addReview, renderList, markUsed
+  };
+})();
+</script>
+</body>
+</html>
