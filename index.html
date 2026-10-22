@@ -393,7 +393,9 @@
           <button class="b-main" id="addBtn">加入库</button>
           <button class="b-soft" id="aiBtn">自动补充 5 条</button>
           <button class="b-soft" id="resetBtn">恢复全部（重置已用）</button>
+          <button class="b-soft hidden" id="seedBtn">导入默认 40 条</button>
         </div>
+        <p id="cloudState" style="font-size:10.5px;line-height:1.8;margin:9px 0 0"></p>
         <p style="font-size:10.5px;color:#b9a4aa;line-height:1.8;margin:9px 0 0">
           自动补充是从真实好评里拆句重组，不会编造店里没有的商品。生成后建议过一眼再用。
         </p>
@@ -466,6 +468,7 @@
 ]
 </script>
 
+<script src="config.js"></script>
 <script>
 (function () {
   "use strict";
@@ -485,8 +488,45 @@
 
   const SEED = JSON.parse(document.getElementById("seed").textContent);
 
-  /* ---------- 存储 ---------- */
-  function load() {
+  /* ============================================================
+     云端数据层（Supabase）
+     配置写在同目录 config.js；没配置就退回本地模式（仅供试用）
+     ============================================================ */
+  const CFG = (window.LY_CONFIG || {});
+  const CLOUD = !!(CFG.supabaseUrl && CFG.supabaseKey);
+  let adminKey = "";
+
+  async function sbRpc(fn, body) {
+    const url = CFG.supabaseUrl.replace(/\/+$/, "") + "/rest/v1/rpc/" + fn;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": CFG.supabaseKey,
+        "Authorization": "Bearer " + CFG.supabaseKey
+      },
+      body: JSON.stringify(body || {})
+    });
+    if (!res.ok) throw new Error("云端错误 " + res.status + "：" + (await res.text()).slice(0, 120));
+    const txt = await res.text();
+    return txt ? JSON.parse(txt) : null;
+  }
+
+  function normalizeRow(r) {
+    let cats = r.cats || r.cat || [];
+    if (!Array.isArray(cats)) cats = [];
+    if (cats.indexOf("全部") < 0) cats = ["全部"].concat(cats);
+    return { id: r.id, text: r.text, cat: cats, status: r.status };
+  }
+
+  async function cloudLoad() {
+    const rows = await sbRpc("list_reviews", {});
+    reviews = (rows || []).map(normalizeRow);
+    used = [];
+  }
+
+  /* ---------- 本地存储（无云端时兜底） ---------- */
+  function loadLocal() {
     let storedVer = 0;
     try { storedVer = parseInt(localStorage.getItem(VER_KEY) || "0", 10) || 0; } catch (e) {}
     try {
@@ -503,14 +543,12 @@
       const oldText = {};
       (Array.isArray(reviews) ? reviews : []).forEach(x => { oldText[x.id] = x.text; });
       reviews = SEED.map(s => ({ id: s.id, cat: s.cat, text: s.text })).concat(mine);
-      // 已复制记录：seed 里仍存在的保留；改过文案的条目重新放出来
       used = used.filter(id => reviews.some(x => x.id === id) && oldText[id] === (reviews.find(x => x.id === id) || {}).text);
       try { localStorage.setItem(VER_KEY, String(SEED_VER)); } catch (e) {}
       saveReviews();
     }
 
     if (!reviews || !reviews.length) { reviews = SEED.slice(); saveReviews(); }
-    // 清理已不存在于库里的 used id
     used = used.filter(id => reviews.some(x => x.id === id));
     saveUsed();
   }
@@ -561,11 +599,12 @@
   function renderList() {
     const avail = reviews.filter(r => !isUsed(r.id));
     const list = avail.filter(r => filter === "全部" || (r.cat || []).indexOf(filter) > -1);
-    const quota = leftToday();
+    // 云端模式：库存就是全店真实剩余量，不再限每天条数
+    const quota = CLOUD ? 9999 : leftToday();
     const left = Math.min(avail.length, quota);
     const total = reviews.length;
     $("#leftN").textContent = left;
-    $("#leftBar").style.width = (total ? Math.round(left / Math.min(total, dailyMax()) * 100) : 0) + "%";
+    $("#leftBar").style.width = (total ? Math.round(left / total * 100) : 0) + "%";
 
     if (!list.length && !avail.length) {
       $("#list").innerHTML = `<div class="empty"><div class="ico">🌸</div><p>都被领走啦～<br>谢谢你愿意帮我们写评价</p></div>`;
@@ -617,16 +656,27 @@
   function doCopy(id) {
     const r = reviews.find(x => x.id === id);
     if (!r) return;
-    copyText(r.text).then(ok => {
+    copyText(r.text).then(async ok => {
       if (!ok) {
         // 极端情况（老浏览器/隐私模式）兜底：把原文弹出来让客人自己长按复制
         showManualCopy(r.text);
         return;
       }
+      // 先占用：本地立刻移除，云端同步标记（全局生效，别的手机也看不到了）
       markUsed(id);
-      markDay(id);
+      if (!CLOUD) markDay(id);
       renderList();
       openSheet();
+      if (CLOUD) {
+        try { await sbRpc("take_review", { p_id: id }); }
+        catch (e) {
+          // 云端占用失败 → 回滚，别让这条凭空消失
+          used = used.filter(x => x !== id);
+          renderList();
+          toast("网络不稳，这条没锁住，换一条试试");
+          return;
+        }
+      }
     });
   }
 
@@ -831,15 +881,30 @@
 
   function openAdmin() {
     $("#admin").classList.add("show");
-    if (sessionStorage.getItem("liuyueli_unlocked") === "1") showAdmMain();
+    if (!CLOUD && sessionStorage.getItem("liuyueli_unlocked") === "1") showAdmMain();
     else { $("#lockPane").classList.remove("hidden"); $("#admMain").classList.add("hidden"); }
   }
   $("#admClose").addEventListener("click", () => { $("#admin").classList.remove("show"); renderList(); });
 
   /* 密码 */
   function getPin() { return localStorage.getItem(PIN_KEY) || "8888"; }
-  $("#pinGo").addEventListener("click", () => {
-    if ($("#pin").value === getPin()) {
+
+  $("#pinGo").addEventListener("click", async () => {
+    const val = ($("#pin").value || "").trim();
+    if (!val) { $("#pinTip").textContent = "请输入密码"; return; }
+    if (CLOUD) {
+      $("#pinTip").textContent = "正在连接云端…";
+      try {
+        await sbRpc("admin_list", { p_key: val });
+        adminKey = val;
+        $("#pinTip").textContent = "";
+        showAdmMain();
+      } catch (e) {
+        $("#pinTip").textContent = "密码不对，或云端没连通";
+      }
+      return;
+    }
+    if (val === getPin()) {
       sessionStorage.setItem("liuyueli_unlocked", "1");
       $("#pinTip").textContent = "";
       showAdmMain();
@@ -849,7 +914,7 @@
   });
   $("#pin").addEventListener("keydown", e => { if (e.key === "Enter") $("#pinGo").click(); });
 
-  /* 设置：每日额度 / 管理密码 */
+  /* 设置：每日额度（仅本地模式）/ 管理密码 */
   $("#setMaxBtn").addEventListener("click", () => {
     const n = parseInt($("#setMax").value, 10);
     if (!(n >= 3 && n <= 60)) { toast("填 3~60 之间的数字"); return; }
@@ -857,10 +922,18 @@
     toast("已设为每天 " + n + " 条");
     renderList();
   });
-  $("#setPinBtn").addEventListener("click", () => {
+  $("#setPinBtn").addEventListener("click", async () => {
     const p = ($("#setPin").value || "").trim();
     if (!p) { toast("密码不能为空"); return; }
-    if (p.length > 8) { toast("最多 8 位"); return; }
+    if (p.length > 20) { toast("最多 20 位"); return; }
+    if (CLOUD) {
+      try {
+        await sbRpc("admin_set_key", { p_old: adminKey, p_new: p });
+        adminKey = p;
+        toast("云端密码已更新");
+      } catch (e) { toast("改密码失败：" + e.message); }
+      return;
+    }
     localStorage.setItem(PIN_KEY, p);
     toast("管理密码已更新");
   });
@@ -868,7 +941,20 @@
   function showAdmMain() {
     $("#lockPane").classList.add("hidden");
     $("#admMain").classList.remove("hidden");
-    renderAdmin();
+    if (CLOUD) refreshAdmin(); else renderAdmin();
+  }
+
+  // 云端模式：从服务器拉全量（含已被复制的），保证和别的手机看到的一致
+  async function refreshAdmin() {
+    try {
+      const rows = await sbRpc("admin_list", { p_key: adminKey });
+      reviews = (rows || []).map(normalizeRow);
+      used = (rows || []).filter(r => r.status === "used").map(r => r.id);
+      renderAdmin();
+      renderList();
+    } catch (e) {
+      toast("刷新失败：" + e.message);
+    }
   }
 
   function renderAdmin() {
@@ -877,6 +963,21 @@
     $("#sLeft").textContent = left;
     $("#sUsed").textContent = reviews.length - left;
     $("#admCount").textContent = `共 ${reviews.length} 条`;
+
+    // 云端状态说明
+    const cs = $("#cloudState");
+    if (cs) {
+      cs.innerHTML = CLOUD
+        ? `✅ 已连接云端（全店共享）：这里的增删，所有顾客都能看到`
+        : `⚠️ 当前是<b>本地模式</b>，文案只存在这台手机里，别人看不到改动（需配置云端数据库）`;
+      cs.style.color = CLOUD ? "#3f8f5a" : "#c9562f";
+    }
+    const maxRow = $("#setMax") && $("#setMax").closest(".row");
+    if (maxRow) maxRow.style.display = CLOUD ? "none" : "";
+    const seedBtn = $("#seedBtn");
+    if (seedBtn) seedBtn.classList.toggle("hidden", !CLOUD);
+    if (CLOUD && seedBtn) seedBtn.classList.toggle("hidden", reviews.length > 0);
+
     if ($("#setMax")) $("#setMax").value = dailyMax();
     if ($("#setPin")) $("#setPin").value = "";
     $("#admList").innerHTML = reviews.map(r => {
@@ -884,7 +985,7 @@
       return `<div class="adm-item">
         <div class="txt">${esc(r.text)}</div>
         <div class="m">
-          <span class="k">${r.id}</span>
+          <span class="k">${esc(String(r.id).slice(0, 8))}</span>
           <span class="k">${(r.cat || []).slice(1).join(" / ") || "未分类"}</span>
           <span class="k"${bad ? ' style="color:#d9536f;background:#ffeef2"' : ""}>${(r.text || "").length} 字${bad ? " · 不足30" : ""}</span>
           <span class="k"${isUsed(r.id) ? ' style="color:#c9556e"' : ""}>${isUsed(r.id) ? "已被复制" : "可展示"}</span>
@@ -895,15 +996,29 @@
     $$("[data-del]").forEach(b => b.addEventListener("click", () => toggleItem(b.dataset.del)));
   }
 
-  function toggleItem(id) {
+  async function toggleItem(id) {
     if (isUsed(id)) {
-      used = used.filter(x => x !== id);
-      saveUsed();
+      if (CLOUD) {
+        try { await sbRpc("admin_set_status", { p_key: adminKey, p_id: id, p_status: "active" }); }
+        catch (e) { toast("操作失败"); return; }
+        await refreshAdmin();
+      } else {
+        used = used.filter(x => x !== id);
+        saveUsed();
+        renderAdmin();
+      }
     } else {
-      reviews = reviews.filter(x => x.id !== id);
-      saveReviews();
+      if (CLOUD) {
+        try { await sbRpc("admin_set_status", { p_key: adminKey, p_id: id, p_status: "deleted" }); }
+        catch (e) { toast("删除失败"); return; }
+        await refreshAdmin();
+      } else {
+        reviews = reviews.filter(x => x.id !== id);
+        saveReviews();
+        renderAdmin();
+        renderList();
+      }
     }
-    renderAdmin();
   }
 
   /* 新增 */
@@ -912,14 +1027,22 @@
     if (t.replace(/\s/g, "").length < 30) { toast("至少 30 个字"); return; }
     addReview(t, ["全部", "环境服务"]);
     $("#newTxt").value = "";
-    toast("已加入库");
   });
 
-  function addReview(text, cats) {
+  async function addReview(text, cats) {
+    if (CLOUD) {
+      try {
+        await sbRpc("admin_add", { p_key: adminKey, p_text: text, p_cats: cats || ["全部"] });
+        await refreshAdmin();
+        toast("已入库，顾客刷新就能看到");
+      } catch (e) { toast("入库失败：" + e.message); }
+      return;
+    }
     reviews.push({ id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), cat: cats || ["全部"], text });
     saveReviews();
     renderAdmin();
     renderList();
+    toast("已加入库");
   }
 
   /* 自动补充：从真实好评里拆句重组（不编造商品） */
@@ -953,24 +1076,45 @@
     const s = pick(PARTS.open) + pick(PARTS.body) + "，" + pick(PARTS.close);
     return s.replace(/，，/g, "，");
   }
-  $("#aiBtn").addEventListener("click", () => {
-    let n = 0, guard = 0;
-    while (n < 5 && guard < 80) {
+  $("#aiBtn").addEventListener("click", async () => {
+    // 生成完一次性批量写入，避免每条都刷一次云端
+    let picks = [], guard = 0;
+    while (picks.length < 5 && guard < 80) {
       guard++;
       const s = makeOne();
       if (s.replace(/\s/g, "").length < 30) continue;
-      // 去重：与现有文案前 20 字高度相似就跳过
-      const dup = reviews.some(r => r.text.slice(0, 20) === s.slice(0, 20));
+      const dup = reviews.some(r => r.text.slice(0, 20) === s.slice(0, 20)) || picks.some(p => p.slice(0, 20) === s.slice(0, 20));
       if (dup) continue;
-      addReview(s, ["全部", "环境服务"]);
-      n++;
+      picks.push(s);
     }
-    toast("补充了 " + n + " 条");
+    if (CLOUD) {
+      let ok = 0;
+      for (const s of picks) {
+        try { await sbRpc("admin_add", { p_key: adminKey, p_text: s, p_cats: ["全部", "环境服务"] }); ok++; }
+        catch (e) { /* 单条失败跳过 */ }
+      }
+      await refreshAdmin();
+      toast("补充了 " + ok + " 条，顾客刷新可见");
+    } else {
+      picks.forEach(s => addReview(s, ["全部", "环境服务"]));
+      toast("补充了 " + picks.length + " 条");
+    }
   });
 
-  /* 重置 */
-  $("#resetBtn").addEventListener("click", () => {
-    if (!confirm("把所有「已复制」的标记清掉？顾客会重新看到全部文案。")) return;
+  /* 重置：把所有「已被复制」的放回库里 */
+  $("#resetBtn").addEventListener("click", async () => {
+    if (!confirm("把所有「已复制」的文案放回库里？顾客会重新看到它们。")) return;
+    if (CLOUD) {
+      const ids = used.slice();
+      let ok = 0;
+      for (const id of ids) {
+        try { await sbRpc("admin_set_status", { p_key: adminKey, p_id: id, p_status: "active" }); ok++; }
+        catch (e) {}
+      }
+      await refreshAdmin();
+      toast("已放回 " + ok + " 条");
+      return;
+    }
     used = [];
     saveUsed();
     renderAdmin();
@@ -978,9 +1122,33 @@
     toast("已重置");
   });
 
+  /* 首次连接云端：把内置 40 条灌进数据库 */
+  const seedBtnEl = $("#seedBtn");
+  if (seedBtnEl) {
+    seedBtnEl.addEventListener("click", async () => {
+      if (!CLOUD) return;
+      if (!confirm("把内置的 40 条文案导入云端？只有空库时才需要。")) return;
+      let ok = 0;
+      for (const s of SEED) {
+        try { await sbRpc("admin_add", { p_key: adminKey, p_text: s.text, p_cats: s.cat }); ok++; }
+        catch (e) {}
+      }
+      await refreshAdmin();
+      toast("导入完成，共 " + ok + " 条");
+    });
+  }
+
   /* 导出 / 导入 */
-  $("#expBtn").addEventListener("click", () => {
-    const data = JSON.stringify({ reviews, used }, null, 2);
+  $("#expBtn").addEventListener("click", async () => {
+    let data;
+    if (CLOUD) {
+      try {
+        const rows = await sbRpc("admin_list", { p_key: adminKey });
+        data = JSON.stringify({ cloud: true, reviews: rows }, null, 2);
+      } catch (e) { toast("导出失败"); return; }
+    } else {
+      data = JSON.stringify({ reviews, used }, null, 2);
+    }
     const blob = new Blob([data], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -992,10 +1160,20 @@
     const f = e.target.files[0];
     if (!f) return;
     const rd = new FileReader();
-    rd.onload = () => {
+    rd.onload = async () => {
       try {
         const d = JSON.parse(rd.result);
         if (!d.reviews || !Array.isArray(d.reviews)) throw new Error("格式不对");
+        if (CLOUD) {
+          let ok = 0;
+          for (const r of d.reviews) {
+            try { await sbRpc("admin_add", { p_key: adminKey, p_text: r.text, p_cats: r.cats || r.cat || ["全部"] }); ok++; }
+            catch (err) {}
+          }
+          await refreshAdmin();
+          toast("已导入 " + ok + " 条");
+          return;
+        }
         reviews = d.reviews;
         used = Array.isArray(d.used) ? d.used : [];
         saveReviews(); saveUsed();
@@ -1007,13 +1185,33 @@
   });
 
   /* ---------- 启动 ---------- */
-  load();
-  renderTags();
-  renderList();
+  async function boot() {
+    renderTags();
+    if (CLOUD) {
+      // 先把本地/内置文案垫上，避免白屏；再从云端拉真实库
+      reviews = SEED.slice();
+      renderList();
+      try {
+        await cloudLoad();
+      } catch (e) {
+        console.warn("[cloud] 读取失败，临时用内置文案", e);
+        toast("云端连接失败，先用本地文案");
+      }
+    } else {
+      loadLocal();
+    }
+    renderTags();
+    renderList();
+  }
+
+  boot();
+
   window.__app = {
     get reviews() { return reviews; },
     get used() { return used; },
-    addReview, renderList, markUsed
+    get cloud() { return CLOUD; },
+    addReview, renderList, markUsed,
+    refreshAdmin: () => (CLOUD ? refreshAdmin() : Promise.resolve())
   };
 })();
 </script>
